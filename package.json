@@ -1,0 +1,10 @@
+{
+  "name": "app1-ip-writer",
+  "version": "1.0.0",
+  "description": "Writes APP1 and container IP to a file and serves it",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {}
+}
