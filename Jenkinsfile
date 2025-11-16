@@ -8,42 +8,29 @@ metadata:
   labels:
     jenkins: agent
 spec:
-  serviceAccountName: jenkins-sa
+  serviceAccountName: jenkins
   containers:
-  - name: docker
-    image: docker:24-dind
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    imagePullPolicy: Always
     command:
-    - dockerd
-    - --host=unix:///var/run/docker.sock
-    - --host=tcp://0.0.0.0:2375
-    securityContext:
-      privileged: true
+    - /busybox/cat
+    tty: true
     volumeMounts:
-    - name: docker-sock
-      mountPath: /var/run
-  - name: docker-client
-    image: docker:24
-    command:
-    - sleep
-    args:
-    - 99d
-    env:
-    - name: DOCKER_HOST
-      value: tcp://localhost:2375
-    volumeMounts:
-    - name: docker-sock
-      mountPath: /var/run
+    - name: docker-config
+      mountPath: /kaniko/.docker
   volumes:
-  - name: docker-sock
-    emptyDir: {}
+  - name: docker-config
+    secret:
+      secretName: docker-config
 """
         }
     }
     
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKER_IMAGE = "mahmoudah98/your-app-name"
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        DOCKER_HUB_REPO = 'mahmoudah98/EKS'
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        GITHUB_REPO = 'https://github.com/MahmoudAh98/EKS-APP.git'
     }
     
     stages {
@@ -53,39 +40,17 @@ spec:
             }
         }
         
-        stage('Build Docker Image') {
+        stage('Build and Push with Kaniko') {
             steps {
-                container('docker-client') {
-                    script {
-                        sh """
-                            docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} .
-                            docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest
-                        """
-                    }
-                }
-            }
-        }
-        
-        stage('Push to DockerHub') {
-            steps {
-                container('docker-client') {
-                    script {
-                        sh """
-                            echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin
-                            docker push ${DOCKER_IMAGE}:${IMAGE_TAG}
-                            docker push ${DOCKER_IMAGE}:latest
-                        """
-                    }
-                }
-            }
-        }
-        
-        stage('Cleanup') {
-            steps {
-                container('docker-client') {
+                container('kaniko') {
                     sh """
-                        docker logout
-                        docker rmi ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest || true
+                        /kaniko/executor \
+                        --context=\${WORKSPACE} \
+                        --dockerfile=\${WORKSPACE}/Dockerfile \
+                        --destination=${DOCKER_HUB_REPO}:${IMAGE_TAG} \
+                        --destination=${DOCKER_HUB_REPO}:latest \
+                        --cache=true \
+                        --cache-ttl=24h
                     """
                 }
             }
@@ -94,13 +59,10 @@ spec:
     
     post {
         success {
-            echo "Pipeline succeeded! Image pushed: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+            echo "Image pushed successfully: ${DOCKER_HUB_REPO}:${IMAGE_TAG}"
         }
         failure {
             echo "Pipeline failed!"
-        }
-        always {
-            cleanWs()
         }
     }
 }
