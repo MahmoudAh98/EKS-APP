@@ -1,17 +1,19 @@
-// تحديد Agent: استخدام صورة jenkins/inbound-agent كحاوية رئيسية لتشغيل البايبلاين
-// وإضافة حاوية Kaniko (Sidecar) التي ستقوم بالبناء.
+// Define Agent: Use the jenkins/inbound-agent image as the main container 
+// and add the Kaniko sidecar container for building the image.
 
-// متغيرات عامة
+// Global Variables
 def KANIKO_IMAGE = "gcr.io/kaniko-project/executor:latest"
-def DOCKER_HUB_CRED_ID = "docker-hub-credentials" // تأكد من مطابقة هذا لـ ID بيانات اعتماد Docker Hub في Jenkins
+// Ensure this ID exactly matches your Docker Hub Credentials ID in Jenkins
+def DOCKER_HUB_CRED_ID = "docker-hub-credentials" 
 
 pipeline {
     agent {
         kubernetes {
-            cloud 'kubernetes' // يجب أن يطابق اسم السحابة التي قمت بتكوينها في Jenkins
+            // Must match the name of the Kubernetes Cloud configuration in Jenkins
+            cloud 'kubernetes' 
             defaultContainer 'jnlp'
             
-            // تعريف قالب البود الديناميكي وإضافة حاوية Kaniko
+            // Define the dynamic Pod Template and add the Kaniko container (Sidecar)
             yaml """
 apiVersion: v1
 kind: Pod
@@ -21,7 +23,8 @@ spec:
     image: ${KANIKO_IMAGE}
     imagePullPolicy: Always
     
-
+    // FIX for 'exec: "cat": executable file not found': 
+    // Use 'sleep' to keep the container running until Jenkins sends commands.
     command:
     - /busybox/sh
     args:
@@ -40,35 +43,32 @@ spec:
         }
     }
 
-    // إعداد متغيرات البيئة
+    // Environment Variables
     environment {
-        // اسم الصورة التي سيتم بناؤها ودفعها
+        // The name of the image to be built and pushed
         DOCKER_IMAGE = "mahmoudah98/eks:${env.BUILD_ID}"
-        // مسار ملف تكوين Docker لتخزين بيانات الاعتماد (يجب أن يكون داخل Kaniko Path)
+        // Path to the Docker config file within the Kaniko mount path
         DOCKER_CONFIG = "/kaniko/.docker/config.json"
-        
-        // المتغيرات الخاصة بالبايبلاين
-        GIT_CREDENTIALS_ID = 'your-git-credentials-id' // استبدل هذا بـ ID بيانات اعتماد Git إذا كنت تحتاجها هنا
     }
 
-    // مراحل البايبلاين
+    // Pipeline Stages
     stages {
         stage('Checkout Code') {
             steps {
                 echo 'Starting code checkout...'
-                // سحب الكود من المستودع باستخدام بيانات اعتماد Git المحددة
+                // Pull the code from the SCM repository
                 checkout scm 
             }
         }
 
         stage('Build and Push with Kaniko') {
             steps {
-                // 1. إنشاء ملف config.json لـ Kaniko باستخدام بيانات اعتماد Docker Hub المخزنة في Jenkins
-                container('jnlp') { // تنفيذ هذه الخطوة في الحاوية الرئيسية (jnlp)
-                    // التأكد من وجود المجلد
+                // 1. Create the config.json file for Kaniko using stored Docker Hub credentials
+                container('jnlp') { // Execute this step in the main JNLP container
+                    // Ensure the directory exists
                     sh "mkdir -p \$(dirname ${DOCKER_CONFIG})"
 
-                    // استخدام بيانات الاعتماد لإنشاء ملف config.json
+                    // Use Jenkins credentials to generate the config.json file
                     withCredentials([usernamePassword(credentialsId: DOCKER_HUB_CRED_ID, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         sh """
                         echo '{"auths":{"https://index.docker.io/v1/":{"username":"${DOCKER_USERNAME}","password":"${DOCKER_PASSWORD}"}}}' > ${DOCKER_CONFIG}
@@ -77,10 +77,9 @@ spec:
                     echo "Docker config file created in ${DOCKER_CONFIG}"
                 }
 
-                // 2. استخدام Kaniko لبناء الصورة ودفعها
-                container('kaniko') { // تشغيل الخطوات داخل حاوية Kaniko
-                    // Kaniko سيستخدم ملف config.json الذي تم إنشاؤه في الخطوة السابقة 
-                    // داخل المجلد /kaniko/.docker
+                // 2. Use Kaniko to build and push the image
+                container('kaniko') { // Execute this step inside the Kaniko sidecar container
+                    // Kaniko will automatically use the config.json file created above
                     sh """
                     /kaniko/executor --context=\$(pwd) \
                                      --dockerfile=\$(pwd)/Dockerfile \
@@ -92,17 +91,19 @@ spec:
         }
     }
 
-    // خطوات ما بعد البناء
+    // Post-build Steps
     post {
         success {
-            echo "✅ نجح بناء الصورة ودفعها: ${DOCKER_IMAGE}"
-            // يمكنك إضافة خطوات نشر (Deploy) هنا
+            echo "✅ Successfully built and pushed image: ${DOCKER_IMAGE}"
         }
         failure {
-            echo "❌ فشل البايبلاين."
+            echo "❌ Pipeline failed."
         }
+        // FIX for 'No steps specified for branch': Must include a steps block.
         always {
-            // تنظيف أي موارد مؤقتة إذا لزم الأمر
+            steps {
+                echo "Pipeline finished, performing cleanup (if any)."
+            }
         }
     }
 }
