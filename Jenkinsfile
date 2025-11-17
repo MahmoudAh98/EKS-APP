@@ -1,76 +1,58 @@
 pipeline {
-  agent {
-    kubernetes {
-      label "kaniko-build-${env.BUILD_ID}"
-      yaml """
+    agent {
+        kubernetes {
+            label "kaniko-build"
+            yaml """
 apiVersion: v1
 kind: Pod
+metadata:
+  labels:
+    jenkins: kaniko
 spec:
-  serviceAccountName: jenkins-sa
   containers:
   - name: kaniko
-    image: gcr.io/kaniko-project/executor:latest
+    image: gcr.io/kaniko-project/executor:debug
     command:
-      - /busybox/busybox
-    args:
-      - sh
-      - -c
-      - "sleep 9999999"
+      - cat
     tty: true
     volumeMounts:
-      - name: kaniko-docker-config
+      - name: kaniko-secret
         mountPath: /kaniko/.docker
-      - name: workspace
+      - name: workspace-volume
         mountPath: /workspace
-
-  - name: jnlp
-    image: jenkins/inbound-agent:latest
-    args:
-      - "jenkins-agent"
-
   volumes:
-    - name: kaniko-docker-config
+    - name: kaniko-secret
       secret:
         secretName: dockerconfig
-        items:
-          - key: .dockerconfigjson
-            path: config.json
-    - name: workspace
+    - name: workspace-volume
       emptyDir: {}
 """
-    }
-  }
-
-  environment {
-    DOCKERHUB_REPO = "mahmoudah98/eks-app"
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-        sh 'cp -R . /workspace || true'
-      }
-    }
-
-    stage('Build & Push with Kaniko') {
-      steps {
-        container('kaniko') {
-          sh '''
-            /kaniko/executor \
-              --context /workspace \
-              --dockerfile /workspace/Dockerfile \
-              --destination ${DOCKERHUB_REPO}:latest \
-              --destination ${DOCKERHUB_REPO}:$(git rev-parse --short HEAD)
-          '''
         }
-      }
     }
-  }
 
-  post {
-    always {
-      echo "Pipeline finished with result: ${currentBuild.currentResult}"
+    environment {
+        IMAGE_NAME = "mahmoudah98/eks"
     }
-  }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build & Push with Kaniko') {
+            steps {
+                container('kaniko') {
+                    sh """
+                    /kaniko/executor \
+                      --context pwd \
+                      --dockerfile Dockerfile \
+                      --destination \$IMAGE_NAME:latest \
+                      --destination \$IMAGE_NAME:\$(git rev-parse --short HEAD)
+                    """
+                }
+            }
+        }
+    }
 }
