@@ -22,13 +22,16 @@ spec:
         mountPath: /kaniko/.docker
       - name: workspace
         mountPath: /workspace
+
   - name: jnlp
-    image: jenkins/inbound-agent:4.13-4
-    args: ${JENKINS_AGENT_WORKDIR:-/home/jenkins}/agent
+    image: jenkins/inbound-agent:latest
+    args:
+      - "jenkins-agent"
+
   volumes:
     - name: kaniko-docker-config
       secret:
-        secretName: dockerconfig      # must exist in 'jenkins' namespace
+        secretName: dockerconfig
         items:
           - key: .dockerconfigjson
             path: config.json
@@ -39,14 +42,13 @@ spec:
   }
 
   environment {
-    DOCKERHUB_REPO = "mahmoudah98/eks-app"      // change as needed
+    DOCKERHUB_REPO = "mahmoudah98/eks-app"
   }
 
   stages {
     stage('Checkout') {
       steps {
         checkout scm
-        // copy workspace to the shared mount (kaniko expects context in container)
         sh 'cp -R . /workspace || true'
       }
     }
@@ -54,7 +56,6 @@ spec:
     stage('Build & Push with Kaniko') {
       steps {
         container('kaniko') {
-          // run kaniko from the mounted workspace
           sh '''
             /kaniko/executor \
               --context /workspace \
@@ -69,7 +70,7 @@ spec:
 
   post {
     always {
-      echo "Pipeline finished: ${currentBuild.currentResult}"
+      echo "Pipeline finished with result: ${currentBuild.currentResult}"
     }
   }
 }
