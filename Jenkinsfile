@@ -10,8 +10,10 @@ spec:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:latest
     command:
-      - cat
-    tty: true
+      - /busybox/sh
+    args:
+      - -c
+      - "sleep 9999999"
     volumeMounts:
       - name: kaniko-secret
         mountPath: /kaniko/.docker
@@ -28,7 +30,7 @@ spec:
     }
 
     environment {
-        DOCKER_IMAGE = "mahmoudah98/eks"
+        DOCKER_IMAGE = "mahmoudah98/myapp"
     }
 
     stages {
