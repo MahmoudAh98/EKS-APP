@@ -10,4 +10,4 @@ spec:
   - name: eks-app
     image: mahmoudah98/eks:latest
     ports:
-    - containerPort: 80
+    - containerPort: 3000   # <— YOUR APP PORT
