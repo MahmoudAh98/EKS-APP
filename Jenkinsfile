@@ -1,13 +1,9 @@
 pipeline {
     agent {
         kubernetes {
-            label "kaniko-build"
             yaml """
 apiVersion: v1
 kind: Pod
-metadata:
-  labels:
-    jenkins: kaniko
 spec:
   containers:
   - name: kaniko
@@ -16,41 +12,46 @@ spec:
       - cat
     tty: true
     volumeMounts:
-      - name: kaniko-secret
-        mountPath: /kaniko/.docker
-      - name: workspace-volume
-        mountPath: /workspace
-  volumes:
     - name: kaniko-secret
-      secret:
-        secretName: dockerconfig
-    - name: workspace-volume
-      emptyDir: {}
-"""
+      mountPath: /kaniko/.docker
+  - name: jnlp
+    image: jenkins/inbound-agent:latest
+    args: ['']
+  volumes:
+  - name: kaniko-secret
+    secret:
+      secretName: dockerconfig
+            """
         }
     }
 
     environment {
-        IMAGE_NAME = "mahmoudah98/eks"
+        DOCKERHUB_REPO = "mahmoudah98/eks"
     }
 
     stages {
-        stage('Checkout Code') {
+
+        stage("Checkout") {
             steps {
-                checkout scm
+                // Checkout happens in the jnlp container
+                container('jnlp') {
+                    checkout scm
+                }
             }
         }
 
-        stage('Build & Push with Kaniko') {
+        stage("Build & Push Image With Kaniko") {
             steps {
                 container('kaniko') {
-                    sh """
-                    /kaniko/executor \
-                      --context pwd \
-                      --dockerfile Dockerfile \
-                      --destination \$IMAGE_NAME:latest \
-                      --destination \$IMAGE_NAME:\$(git rev-parse --short HEAD)
-                    """
+                    sh '''
+                        echo "Building Docker image with Kaniko..."
+
+                        /kaniko/executor \
+                          --context `pwd` \
+                          --dockerfile Dockerfile \
+                          --destination ${DOCKERHUB_REPO}:latest \
+                          --cache=true
+                    '''
                 }
             }
         }
