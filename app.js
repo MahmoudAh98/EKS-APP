@@ -66,7 +66,7 @@ function buildHtml({ ip, timestamp, fileContents }) {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>APP1 - Pod Info</title>
+<title>APP - Pod Info</title>
 <style>
   :root{
     --bg:#0f172a;
