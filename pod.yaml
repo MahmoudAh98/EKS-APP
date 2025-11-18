@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: eks-app
+  namespace: app
+  labels:
+    app: eks-app
+spec:
+  containers:
+  - name: eks-app
+    image: mahmoudah98/eks:latest
+    ports:
+    - containerPort: 80
