@@ -27,7 +27,7 @@ function formatUTCPlus3() {
   const now = new Date();
   // convert local time to UTC, then add 3 hours
   const utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
-  const target = new Date(utc.getTime() + 3 * 3600 * 1000);
+  const target = new Date(utc.getTime() + 2 * 3600 * 1000);
 
   const y = target.getUTCFullYear();
   const mo = String(target.getUTCMonth() + 1).padStart(2, '0');
