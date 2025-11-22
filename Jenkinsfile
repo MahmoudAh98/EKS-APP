@@ -21,11 +21,6 @@ spec:
       mountPath: /kaniko/.docker
 
       
-    - name: kubectl
-      image: bitnami/kubectl:latest
-      command: ["/bin/sh"]
-      args: ["-c", "sleep infinity"]
-      tty: false
 
     
   - name: jnlp
@@ -72,9 +67,9 @@ spec:
                     sh 'kubectl get nodes'
                     sh 'kubectl get pods -n jenkins'
                 }
+            }
 
 }
 
     }
 }
-
