@@ -21,11 +21,11 @@ spec:
       mountPath: /kaniko/.docker
 
       
-    - name: kubectl
-      image: bitnami/kubectl:latest
-      command: ["/bin/sh"]
-      args: ["-c", "sleep infinity"]
-      tty: false
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command: ["/bin/sh"]
+    args: ["-c", "sleep infinity"]
+    tty: false
 
     
   - name: jnlp
