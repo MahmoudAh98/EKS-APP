@@ -1,6 +1,7 @@
 pipeline {
     agent {
         kubernetes {
+            serviceAccount 'jenkins-sa'
             yaml """
 apiVersion: v1
 kind: Pod
