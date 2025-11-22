@@ -59,7 +59,7 @@ spec:
                     sh '''
                         /kaniko/executor \
                           --dockerfile Dockerfile \
-                          --context pwd \
+                          --context$(pwd) \
                           --destination ${DOCKERHUB_REPO}:latest \
                           --cache=true
                     '''
