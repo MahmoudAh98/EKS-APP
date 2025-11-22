@@ -1,7 +1,6 @@
 pipeline {
     agent {
         kubernetes {
-            serviceAccount 'jenkins-sa'
             yaml """
 apiVersion: v1
 kind: Pod
@@ -9,20 +8,12 @@ spec:
   containers:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:debug
-    command:
-      - /bin/sh
-    args:
-      - -c
-      - sleep infinity
+    command: ["cat"]
     tty: true
-
     volumeMounts:
     - name: kaniko-secret
       mountPath: /kaniko/.docker
 
-      
-
-    
   - name: jnlp
     image: jenkins/inbound-agent:latest
     # DO NOT override args here!
@@ -61,6 +52,9 @@ spec:
                 }
             }
         }
+
+
+
         stage("Deploy Pod to EKS") {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig']) {
@@ -70,6 +64,5 @@ spec:
             }
 
 }
-
     }
 }
