@@ -23,13 +23,10 @@ spec:
       
   - name: kubectl
     image: bitnami/kubectl:latest
-    command:
-      - /bin/sh
-    args:
-      - -c
-      - sleep infinity
-    tty: true
-
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do sleep 1000; done"]
+    tty: false
+    
   - name: jnlp
     image: jenkins/inbound-agent:latest
     # DO NOT override args here!
