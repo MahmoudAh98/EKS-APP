@@ -8,30 +8,30 @@ kind: Pod
 spec:
   containers:
   - name: kaniko
-    image: gcr.io/kaniko-project/executor:debug:v1.12.0
+    image: gcr.io/kaniko-project/executor:debug
     command:
       - /bin/sh
     args:
       - -c
       - sleep infinity
     tty: true
+
     volumeMounts:
     - name: kaniko-secret
       mountPath: /kaniko/.docker
 
-  - name: kubectl
-    image: bitnami/kubectl:1.30.0
-    command:
-      - /bin/sh
-    args:
-      - -c
-      - sleep infinity
-    tty: true
+      
+    - name: kubectl
+      image: bitnami/kubectl:latest
+      command: ["/bin/sh"]
+      args: ["-c", "sleep infinity"]
+      tty: false
 
+    
   - name: jnlp
     image: jenkins/inbound-agent:latest
-    # Do not override args
-
+    # DO NOT override args here!
+  
   volumes:
   - name: kaniko-secret
     secret:
@@ -45,7 +45,6 @@ spec:
     }
 
     stages {
-
         stage("Checkout") {
             steps {
                 container('jnlp') {
@@ -54,51 +53,38 @@ spec:
             }
         }
 
-        stage("Build and Push Docker Image") {
+        stage("Build-Push Image (Kaniko)") {
             steps {
                 container('kaniko') {
                     sh '''
                         /kaniko/executor \
-                          --dockerfile $WORKSPACE/Dockerfile \
-                          --context $WORKSPACE \
+                          --dockerfile Dockerfile \
+                          --context pwd \
                           --destination ${DOCKERHUB_REPO}:latest \
                           --cache=true
                     '''
                 }
             }
         }
+        stage("Deploy Pod to EKS") {
+    steps {
+        container('kubectl') {
+            sh '''
+                # Apply service
+                kubectl apply -f service.yaml
 
-        stage("Deploy to EKS") {
-            steps {
-                container('kubectl') {
-                    sh '''
-                        # Apply service
-                        kubectl apply -f $WORKSPACE/service.yaml
+                # Delete old pod (if exists)
+                kubectl delete pod eks-app -n app --ignore-not-found=true
 
-                        # Delete old pod if it exists
-                        kubectl delete pod eks-app -n app --ignore-not-found=true
+                # Replace image with latest before creating
+                sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" pod.yaml > pod-rendered.yaml
 
-                        # Update pod.yaml with new image
-                        sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" $WORKSPACE/pod.yaml > $WORKSPACE/pod-rendered.yaml
-
-                        # Apply updated pod
-                        kubectl apply -f $WORKSPACE/pod-rendered.yaml
-                    '''
-                }
-            }
+                # Apply Pod
+                kubectl apply -f pod-rendered.yaml
+            '''
         }
-
     }
+}
 
-    post {
-        always {
-            echo "Pipeline finished."
-        }
-        success {
-            echo "Pipeline completed successfully!"
-        }
-        failure {
-            echo "Pipeline failed."
-        }
     }
 }
