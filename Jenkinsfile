@@ -14,6 +14,12 @@ spec:
     - name: kaniko-secret
       mountPath: /kaniko/.docker
 
+      
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command: ["cat"]
+    tty: true
+
   - name: jnlp
     image: jenkins/inbound-agent:latest
     # DO NOT override args here!
