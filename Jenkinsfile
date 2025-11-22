@@ -1,7 +1,7 @@
-
 pipeline {
     agent {
         kubernetes {
+            serviceAccount 'jenkins-sa'
             yaml """
 apiVersion: v1
 kind: Pod
@@ -9,12 +9,25 @@ spec:
   containers:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:debug
-    command: ["cat"]
+    command:
+      - /bin/sh
+    args:
+      - -c
+      - sleep infinity
     tty: true
+
     volumeMounts:
     - name: kaniko-secret
       mountPath: /kaniko/.docker
 
+      
+    - name: kubectl
+      image: bitnami/kubectl:latest
+      command: ["/bin/sh"]
+      args: ["-c", "sleep infinity"]
+      tty: false
+
+    
   - name: jnlp
     image: jenkins/inbound-agent:latest
     # DO NOT override args here!
@@ -46,7 +59,7 @@ spec:
                     sh '''
                         /kaniko/executor \
                           --dockerfile Dockerfile \
-                          --context `pwd` \
+                          --context pwd \
                           --destination ${DOCKERHUB_REPO}:latest \
                           --cache=true
                     '''
@@ -54,13 +67,24 @@ spec:
             }
         }
         stage("Deploy Pod to EKS") {
-            steps {
-                withKubeConfig([credentialsId: 'kubeconfig']) {
-                    sh 'kubectl get nodes'
-                    sh 'kubectl get pods -n jenkins'
-                }
-            }
+    steps {
+        container('kubectl') {
+            sh '''
+                # Apply service
+                kubectl apply -f service.yaml
 
+                # Delete old pod (if exists)
+                kubectl delete pod eks-app -n app --ignore-not-found=true
+
+                # Replace image with latest before creating
+                sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" pod.yaml > pod-rendered.yaml
+
+                # Apply Pod
+                kubectl apply -f pod-rendered.yaml
+            '''
+        }
+    }
 }
+
     }
 }
