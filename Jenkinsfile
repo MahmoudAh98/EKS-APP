@@ -28,7 +28,7 @@ spec:
     args:
       - -c
       - sleep infinity
-    tty: true
+    tty: false
 
   - name: jnlp
     image: jenkins/inbound-agent:latest
