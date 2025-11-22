@@ -8,7 +8,19 @@ kind: Pod
 spec:
   containers:
   - name: kaniko
-    image: gcr.io/kaniko-project/executor:debug
+    image: gcr.io/kaniko-project/executor:debug:v1.12.0
+    command:
+      - /bin/sh
+    args:
+      - -c
+      - sleep infinity
+    tty: true
+    volumeMounts:
+    - name: kaniko-secret
+      mountPath: /kaniko/.docker
+
+  - name: kubectl
+    image: bitnami/kubectl:1.30.0
     command:
       - /bin/sh
     args:
@@ -16,16 +28,10 @@ spec:
       - sleep infinity
     tty: true
 
-    volumeMounts:
-    - name: kaniko-secret
-      mountPath: /kaniko/.docker
- 
-
-    
   - name: jnlp
     image: jenkins/inbound-agent:latest
-    # DO NOT override args here!
-  
+    # Do not override args
+
   volumes:
   - name: kaniko-secret
     secret:
@@ -39,6 +45,7 @@ spec:
     }
 
     stages {
+
         stage("Checkout") {
             steps {
                 container('jnlp') {
@@ -47,37 +54,51 @@ spec:
             }
         }
 
-        stage("Build-Push Image (Kaniko)") {
+        stage("Build and Push Docker Image") {
             steps {
                 container('kaniko') {
                     sh '''
                         /kaniko/executor \
-                          --dockerfile Dockerfile \
-                          --context `pwd` \
+                          --dockerfile $WORKSPACE/Dockerfile \
+                          --context $WORKSPACE \
                           --destination ${DOCKERHUB_REPO}:latest \
                           --cache=true
                     '''
                 }
             }
         }
-    agent any  // runs on Jenkins host
-    steps {
-        sh '''
-            # Apply service
-            kubectl apply -f service.yaml
 
-            # Delete old pod
-            kubectl delete pod eks-app -n app --ignore-not-found=true
+        stage("Deploy to EKS") {
+            steps {
+                container('kubectl') {
+                    sh '''
+                        # Apply service
+                        kubectl apply -f $WORKSPACE/service.yaml
 
-            # Update image
-            sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" pod.yaml > pod-rendered.yaml
+                        # Delete old pod if it exists
+                        kubectl delete pod eks-app -n app --ignore-not-found=true
 
-            # Apply pod
-            kubectl apply -f pod-rendered.yaml
-        '''
+                        # Update pod.yaml with new image
+                        sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" $WORKSPACE/pod.yaml > $WORKSPACE/pod-rendered.yaml
+
+                        # Apply updated pod
+                        kubectl apply -f $WORKSPACE/pod-rendered.yaml
+                    '''
+                }
+            }
+        }
+
     }
 
+    post {
+        always {
+            echo "Pipeline finished."
+        }
+        success {
+            echo "Pipeline completed successfully!"
+        }
+        failure {
+            echo "Pipeline failed."
+        }
     }
 }
-
-
