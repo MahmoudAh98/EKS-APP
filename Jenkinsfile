@@ -1,3 +1,4 @@
+
 pipeline {
     agent {
         kubernetes {
@@ -53,24 +54,13 @@ spec:
             }
         }
         stage("Deploy Pod to EKS") {
-    steps {
-        container('kubectl') {
-            sh '''
-                # Apply service
-                kubectl apply -f k8s/service.yaml
+            steps {
+                withKubeConfig([credentialsId: 'kubeconfig']) {
+                    sh 'kubectl get nodes'
+                    sh 'kubectl get pods -n jenkins'
+                }
+            }
 
-                # Delete old pod (if exists)
-                kubectl delete pod eks-app -n app --ignore-not-found=true
-
-                # Replace image with latest before creating
-                sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" k8s/pod.yaml > k8s/pod-rendered.yaml
-
-                # Apply Pod
-                kubectl apply -f k8s/pod-rendered.yaml
-            '''
-        }
-    }
 }
-
     }
 }
