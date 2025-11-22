@@ -23,6 +23,12 @@ spec:
       
   - name: kubectl
     image: bitnami/kubectl:latest
+    command:
+      - /bin/sh
+    args:
+      - -c
+      - sleep infinity
+    tty: true
 
   - name: jnlp
     image: jenkins/inbound-agent:latest
