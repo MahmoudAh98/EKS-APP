@@ -19,13 +19,7 @@ spec:
     volumeMounts:
     - name: kaniko-secret
       mountPath: /kaniko/.docker
-
-      
-  - name: kubectl
-    image: bitnami/kubectl:latest
-    command: ["/bin/sh"]
-    args: ["-c", "sleep infinity"]
-    tty: false
+ 
 
     
   - name: jnlp
@@ -68,7 +62,6 @@ spec:
         }
         stage("Deploy Pod to EKS") {
     steps {
-        container('kubectl') {
             sh '''
                 # Apply service
                 kubectl apply -f service.yaml
@@ -82,7 +75,6 @@ spec:
                 # Apply Pod
                 kubectl apply -f pod-rendered.yaml
             '''
-        }
     }
 }
 
