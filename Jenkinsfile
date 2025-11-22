@@ -63,16 +63,16 @@ spec:
         container('kubectl') {
             sh '''
                 # Apply service
-                kubectl apply -f k8s/service.yaml
+                kubectl apply -f service.yaml
 
                 # Delete old pod (if exists)
                 kubectl delete pod eks-app -n app --ignore-not-found=true
 
                 # Replace image with latest before creating
-                sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" k8s/pod.yaml > k8s/pod-rendered.yaml
+                sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" pod.yaml > pod-rendered.yaml
 
                 # Apply Pod
-                kubectl apply -f k8s/pod-rendered.yaml
+                kubectl apply -f pod-rendered.yaml
             '''
         }
     }
