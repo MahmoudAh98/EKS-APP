@@ -8,8 +8,13 @@ spec:
   containers:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:debug
-    command: ["cat"]
+    command:
+      - /bin/sh
+    args:
+      - -c
+      - sleep infinity
     tty: true
+
     volumeMounts:
     - name: kaniko-secret
       mountPath: /kaniko/.docker
@@ -17,7 +22,11 @@ spec:
       
   - name: kubectl
     image: bitnami/kubectl:latest
-    command: ["cat"]
+    command:
+      - /bin/sh
+    args:
+      - -c
+      - sleep infinity
     tty: true
 
   - name: jnlp
