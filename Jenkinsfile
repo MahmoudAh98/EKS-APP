@@ -18,13 +18,12 @@ spec:
       
   - name: kubectl
     image: bitnami/kubectl:latest
-    command: ["/bin/sh", "-c"]
-    args: ["sleep infinity"]
+    command:
+      - cat
     tty: true
-    stdin: true   # <-- add this
-    env:
-    - name: HOME
-      value: /root
+    securityContext:
+      runAsUser: 1000
+
 
 
   - name: jnlp
