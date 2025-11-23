@@ -69,12 +69,19 @@ spec:
         container('kubectl') {
             
             sh '''
-                echo "Starting kubectl commands..."
-                kubectl get pods -n jenkins
-                echo "Pods retrieved, now creating pod..."
-                kubectl run nginx2 --image nginx
-                echo "Pod creation attempted."
+                # Apply service
+                kubectl apply -f service.yaml
+
+                # Delete old pod (if exists)
+                kubectl delete pod eks-app -n app --ignore-not-found=true
+
+                # Replace image with latest before creating
+                sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" pod.yaml > pod-rendered.yaml
+
+                # Apply Pod
+                kubectl apply -f pod-rendered.yaml
             '''
+
 
         }
     }
