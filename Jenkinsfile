@@ -18,8 +18,9 @@ spec:
       
   - name: kubectl
     image: bitnami/kubectl:latest
-    command: ["cat"]
-    tty: true
+    command: ["/bin/sh", "-c", "while true; do sleep 30; done"]  # Keeps container alive with shell
+    tty: true  # <-- Remove this line (not needed for sh steps)
+
 
   - name: jnlp
     image: jenkins/inbound-agent:latest
