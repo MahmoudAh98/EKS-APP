@@ -260,10 +260,10 @@ function buildHtml({ ip, timestamp, fileContents }) {
 
     <div class="info">
       <div class="field">
-        <div class="label">Service</div>
-        <div class="value">APP</div>
+        <div class="label">Pod</div>
+        <div class="value">EKS-APP</div>
 
-        <div class="label" style="margin-top:10px">Container IP</div>
+        <div class="label" style="margin-top:10px">Pod IP</div>
         <div class="value" id="ipValue">${ip}</div>
 
         <div class="row">
@@ -273,7 +273,7 @@ function buildHtml({ ip, timestamp, fileContents }) {
       </div>
 
       <div class="field">
-        <div class="label">Output file</div>
+        <div class="label">Details</div>
         <pre id="fileContents" style="margin:8px 0;font-size:20px;color:#dff1ff;background:transparent;border-radius:6px;padding:6px;">${safeFile || 'N/A'}</pre>
 
         <div class="label">Last updated</div>
