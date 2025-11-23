@@ -10,16 +10,14 @@ const PORT = process.env.PORT || 3000;
 // return first non-internal IPv4 address (or 0.0.0.0 if none)
 function getContainerIP() {
   const nets = os.networkInterfaces() || {};
-  const addrs = [];
   for (const name of Object.keys(nets)) {
-    const ifaces = nets[name] || [];
-    for (const iface of ifaces) {
+    for (const iface of nets[name] || []) {
       if (iface && iface.family === 'IPv4' && !iface.internal && iface.address) {
-        addrs.push({ iface: name, addr: iface.address });
+        return iface.address;
       }
     }
   }
-  return addrs.length > 0 ? addrs[0].addr : '0.0.0.0';
+  return '0.0.0.0';
 }
 
 // compute a formatted timestamp in UTC+3 in 12-hour format with AM/PM
@@ -85,7 +83,7 @@ html,body{
   position: relative;
 }
 
-/* 🔵 Colorful Kubernetes background watermark */
+/* 🔵 Colorful Kubernetes background + fade out in 20 sec */
 body::before {
   content: "";
   position: absolute;
@@ -94,9 +92,16 @@ body::before {
   background-repeat: no-repeat;
   background-position: center;
   background-size: 60%;
-  opacity: 0.08;
+  opacity: 0.10;
   filter: blur(1px);
   z-index: 0;
+  animation: fadeBg 20s linear forwards;
+}
+
+/* 🌙 Background fade-out animation */
+@keyframes fadeBg {
+  0%   { opacity: 0.10; }
+  100% { opacity: 0; }
 }
 
 .wrap{
@@ -132,7 +137,7 @@ header{
   animation: fadeIn 1.4s ease;
 }
 
-/* 🟦 Colorful Kubernetes Pod Icon */
+/* 🟦 Kubernetes Favicon Icon */
 .logo{
   width:70px;
   height:70px;
@@ -147,7 +152,6 @@ header{
 }
 
 h1{ margin:0; font-size:28px; }
-p.lead{ margin:0; color:var(--muted); font-size:15px; }
 
 .info{
   display:flex;
@@ -220,14 +224,6 @@ button.primary:hover{
   box-shadow: 0 4px 16px rgba(96,165,250,0.4);
 }
 
-pre{margin:0;white-space:pre-wrap;word-break:break-word;}
-
-@media (max-width:600px){
-  .info{flex-direction:column;}
-  .field{min-width:auto;}
-}
-
-/* animations */
 @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
 @keyframes slideUp { from {opacity:0; transform:translateY(40px);} to {opacity:1; transform:translateY(0);} }
 @keyframes popIn { 0% {transform: scale(0);} 60% {transform: scale(1.1);} 100% {transform: scale(1);} }
