@@ -18,8 +18,12 @@ spec:
       
   - name: kubectl
     image: bitnami/kubectl:latest
-    command: ["/bin/sh", "-c", "while true; do sleep 30; done"]  # Keeps container alive with shell
-    tty: true  # <-- Remove this line (not needed for sh steps)
+    command:
+      - /bin/sh
+    args:
+      - -c
+      - sleep infinity
+
 
 
   - name: jnlp
