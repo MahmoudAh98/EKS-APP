@@ -333,6 +333,9 @@ const server = http.createServer((req, res) => {
     };
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(payload));
+
+  } else if (req.url === '/depi.png') { const imgPath = path.join(__dirname, 'depi.png'); try { const img = fs.readFileSync(imgPath); res.writeHead(200, { 'Content-Type': 'image/png' }); res.end(img); } catch (err) { res.writeHead(404); res.end('Image not found'); } }
+  
   } else if (req.url === '/raw') {
     // raw text version (same as earlier simple endpoint)
     let file = '';
