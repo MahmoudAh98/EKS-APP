@@ -1,6 +1,7 @@
 pipeline {
     agent {
         kubernetes {
+            serviceAccount 'jenkins-sa'
             yaml """
 apiVersion: v1
 kind: Pod
@@ -62,17 +63,8 @@ spec:
     steps {
         container('kubectl') {
             sh '''
-                # Apply service
-                kubectl apply -f service.yaml
-
-                # Delete old pod (if exists)
-                kubectl delete pod eks-app -n app --ignore-not-found=true
-
-                # Replace image with latest before creating
-                sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" pod.yaml > pod-rendered.yaml
-
-                # Apply Pod
-                kubectl apply -f pod-rendered.yaml
+                    kubectl get pods -n jenkins
+                    kubectl run nginx2 --image nginx
             '''
         }
     }
