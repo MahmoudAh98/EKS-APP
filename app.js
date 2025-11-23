@@ -47,7 +47,7 @@ function formatUTCPlus3() {
 
 function writeOutput() {
   const ip = getContainerIP();
-  const content = `APP1 ${ip}\n`;
+  const content = `APP ${ip}\n`;
   try {
     fs.writeFileSync(OUTFILE, content, { encoding: 'utf8' });
     console.log('Wrote:', content.trim(), '->', OUTFILE);
@@ -66,7 +66,7 @@ function buildHtml({ ip, timestamp, fileContents }) {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mahmoud Ahmed Final Project with Mohamed</title>
+<title>Depi Final Project</title>
 <style>
   :root{
     --bg:#0f172a;
@@ -261,7 +261,7 @@ function buildHtml({ ip, timestamp, fileContents }) {
     <div class="info">
       <div class="field">
         <div class="label">Service</div>
-        <div class="value">APP1</div>
+        <div class="value">APP</div>
 
         <div class="label" style="margin-top:10px">Container IP</div>
         <div class="value" id="ipValue">${ip}</div>
