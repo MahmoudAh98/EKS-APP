@@ -6,6 +6,8 @@ metadata:
   labels:
     app: eks-app
 spec:
+  nodeSelector:
+    eks: app
   containers:
   - name: eks-app
     image: mahmoudah98/eks:latest
