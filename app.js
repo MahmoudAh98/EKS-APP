@@ -251,7 +251,9 @@ function buildHtml({ ip, timestamp, fileContents }) {
 <div class="wrap">
   <div class="card" role="main">
     <header>
-      <div class="logo">A1</div>
+      <div class="logo">
+        <img src="depi.png" alt="Logo" style="width:50px; height:auto;">
+      </div>
       <div>
         <h1>APP - Pod Info</h1>
 
