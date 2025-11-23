@@ -253,7 +253,7 @@ function buildHtml({ ip, timestamp, fileContents }) {
     <header>
       <div class="logo">A1</div>
       <div>
-        <h1>APP1 - Pod Info</h1>
+        <h1>APP - Pod Info</h1>
 
       </div>
     </header>
