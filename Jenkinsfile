@@ -62,10 +62,15 @@ spec:
         stage("Deploy Pod to EKS") {
     steps {
         container('kubectl') {
+            
             sh '''
-                    kubectl get pods -n jenkins
-                    kubectl run nginx2 --image nginx
+                echo "Starting kubectl commands..."
+                kubectl get pods -n jenkins
+                echo "Pods retrieved, now creating pod..."
+                kubectl run nginx2 --image nginx
+                echo "Pod creation attempted."
             '''
+
         }
     }
 }
