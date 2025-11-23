@@ -25,7 +25,6 @@ function getContainerIP() {
 // compute a formatted timestamp in UTC+3 in 12-hour format with AM/PM
 function formatUTCPlus3() {
   const now = new Date();
-  // convert local time to UTC, then add 3 hours
   const utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
   const target = new Date(utc.getTime() + 2 * 3600 * 1000);
 
@@ -33,7 +32,7 @@ function formatUTCPlus3() {
   const mo = String(target.getUTCMonth() + 1).padStart(2, '0');
   const d = String(target.getUTCDate()).padStart(2, '0');
 
-  let hh = target.getUTCHours(); // 0-23
+  let hh = target.getUTCHours();
   const mm = String(target.getUTCMinutes()).padStart(2, '0');
   const ss = String(target.getUTCSeconds()).padStart(2, '0');
 
@@ -47,7 +46,7 @@ function formatUTCPlus3() {
 
 function writeOutput() {
   const ip = getContainerIP();
-  const content = `APP1 ${ip}\n`;
+  const content = `APP ${ip}\n`;
   try {
     fs.writeFileSync(OUTFILE, content, { encoding: 'utf8' });
     console.log('Wrote:', content.trim(), '->', OUTFILE);
@@ -58,15 +57,14 @@ function writeOutput() {
 }
 
 function buildHtml({ ip, timestamp, fileContents }) {
-  // simple, clean, responsive card with copy + refresh
-  // fileContents should already be escaped/controlled (we write only plain text to the file)
   const safeFile = (fileContents || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mahmoud Ahmed Final Project with Mohamed</title>
+<title>Depi Final Project</title>
 <style>
   :root{
     --bg:#0f172a;
@@ -75,7 +73,6 @@ function buildHtml({ ip, timestamp, fileContents }) {
     --muted:#94a3b8;
     --glass: rgba(255,255,255,0.03);
   }
-
   html,body{
     height:100%;
     margin:0;
@@ -85,8 +82,6 @@ function buildHtml({ ip, timestamp, fileContents }) {
     background: radial-gradient(circle at center, #0a1536 0%, #050a1a 100%);
     position: relative;
   }
-
-  /* 🐳 Docker background logo faintly visible */
   body::before {
     content: "";
     position: absolute;
@@ -110,7 +105,6 @@ function buildHtml({ ip, timestamp, fileContents }) {
     z-index: 1;
     animation: fadeIn 1.5s ease;
   }
-
   .card{
     background: rgba(11, 18, 32, 0.7);
     backdrop-filter: blur(14px);
@@ -124,7 +118,6 @@ function buildHtml({ ip, timestamp, fileContents }) {
     opacity: 0;
     animation: slideUp 1s ease forwards;
   }
-
   header{
     display:flex;
     align-items:center;
@@ -133,20 +126,16 @@ function buildHtml({ ip, timestamp, fileContents }) {
     animation: fadeIn 1.4s ease;
   }
 
+  /* ← مكان اللوجو */
   .logo{
     width:70px;
     height:70px;
     border-radius:14px;
-    background:linear-gradient(90deg,var(--accent),#7dd3fc);
+    overflow:hidden;
+    background:transparent;
     display:flex;
     align-items:center;
     justify-content:center;
-    color:#04263a;
-    font-weight:800;
-    font-size:22px;
-    box-shadow:0 8px 20px rgba(32,81,230,0.1);
-    transform: scale(0.9);
-    animation: popIn 1s ease forwards;
   }
 
   h1{
@@ -190,7 +179,7 @@ function buildHtml({ ip, timestamp, fileContents }) {
   }
 
   .value{
-    font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    font-family: ui-monospace, monospace;
     font-size:22px;
     color:#d6ecff;
   }
@@ -214,54 +203,34 @@ function buildHtml({ ip, timestamp, fileContents }) {
     font-size:15px;
   }
 
-  button:hover{
-    transform: translateY(-2px);
-    border-color: var(--accent);
-  }
-
   button.primary{
     background:linear-gradient(90deg,var(--accent),#7dd3fc);
     color:#022039;
     border:none;
     font-weight:600;
   }
-
-  button.primary:hover{
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 4px 16px rgba(96,165,250,0.4);
-  }
-
-  small{color:var(--muted);}
-  footer{margin-top:20px;color:var(--muted);font-size:14px;display:flex;justify-content:space-between;align-items:center;}
-  pre{margin:0;white-space:pre-wrap;word-break:break-word;}
-  @media (max-width:600px){
-    .info{flex-direction:column;}
-    .field{min-width:auto;}
-  }
-
-  /* ✨ Animations ✨ */
-  @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
-  @keyframes slideUp { from {opacity:0; transform:translateY(40px);} to {opacity:1; transform:translateY(0);} }
-  @keyframes popIn { 0% {transform: scale(0);} 60% {transform: scale(1.1);} 100% {transform: scale(1);} }
 </style>
-
-
 </head>
+
 <body>
 <div class="wrap">
   <div class="card" role="main">
     <header>
-      <div class="logo">A1</div>
+
+      <!-- 🔥 تم استبدال A1 بصورة depi.png -->
+      <div class="logo">
+        <img src="/depi.png" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
+      </div>
+
       <div>
         <h1>APP - Pod Info</h1>
-
       </div>
     </header>
 
     <div class="info">
       <div class="field">
         <div class="label">Service</div>
-        <div class="value">APP1</div>
+        <div class="value">APP</div>
 
         <div class="label" style="margin-top:10px">Container IP</div>
         <div class="value" id="ipValue">${ip}</div>
@@ -274,34 +243,27 @@ function buildHtml({ ip, timestamp, fileContents }) {
 
       <div class="field">
         <div class="label">Output file</div>
-        <pre id="fileContents" style="margin:8px 0;font-size:20px;color:#dff1ff;background:transparent;border-radius:6px;padding:6px;">${safeFile || 'N/A'}</pre>
+        <pre id="fileContents" style="margin:8px 0;font-size:20px;color:#dff1ff;background:transparent;">${safeFile || 'N/A'}</pre>
 
         <div class="label">Last updated</div>
         <div class="value" id="ts">${timestamp}</div>
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
   const copyBtn = document.getElementById('copyBtn');
-  const refreshBtn = document.getElementById('refreshBtn');
   const ipValue = document.getElementById('ipValue');
-  const fileContents = document.getElementById('fileContents');
   const msg = document.getElementById('msg');
-
-  function showMsg(t) {
-    msg.textContent = t;
-    setTimeout(()=> msg.textContent='', 2600);
-  }
 
   copyBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(ipValue.textContent.trim());
-      showMsg('Copied!');
+      msg.textContent = "Copied!";
+      setTimeout(()=> msg.textContent="", 2500);
     } catch(err) {
-      showMsg('Copy failed');
+      msg.textContent = "Copy failed";
     }
   });
 </script>
@@ -311,44 +273,44 @@ function buildHtml({ ip, timestamp, fileContents }) {
 
 // server
 const server = http.createServer((req, res) => {
-  if (req.url === '/' || req.url === '/output' || req.url === '/index.html') {
-    // read output file to display exact contents
-    let file = '';
+
+  // serve depi.png
+  if (req.url === '/depi.png') {
     try {
-      file = fs.readFileSync(OUTFILE, 'utf8');
+      const img = fs.readFileSync(path.join(__dirname, 'depi.png'));
+      res.writeHead(200, { 'Content-Type': 'image/png' });
+      res.end(img);
     } catch (err) {
-      // file may not exist yet - ignore and show N/A
+      res.writeHead(404);
+      res.end("Image not found\n");
     }
+    return;
+  }
+
+  if (req.url === '/' || req.url === '/output' || req.url === '/index.html') {
+    let file = '';
+    try { file = fs.readFileSync(OUTFILE, 'utf8'); } catch {}
     const ip = getContainerIP();
     const html = buildHtml({ ip, timestamp: formatUTCPlus3(), fileContents: file });
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(html);
+
   } else if (req.url === '/refresh') {
     const result = writeOutput();
-    const payload = {
-      content: result.content,
-      timestamp: formatUTCPlus3()
-    };
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(payload));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ content: result.content, timestamp: formatUTCPlus3() }));
+
   } else if (req.url === '/raw') {
-    // raw text version (same as earlier simple endpoint)
-    let file = '';
-    try {
-      file = fs.readFileSync(OUTFILE, 'utf8');
-    } catch (err) {
-      file = 'No output yet\n';
-    }
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    let file = 'No output yet\n';
+    try { file = fs.readFileSync(OUTFILE, 'utf8'); } catch {}
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end(file);
+
   } else {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not found\n');
   }
 });
 
-// initial write + start server
-writeOutput(); // initial write
-server.listen(PORT, () => {
-  console.log(`Nice UI server listening on port ${PORT}`);
-});
+writeOutput();
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
