@@ -10,41 +10,39 @@ const PORT = process.env.PORT || 3000;
 // return first non-internal IPv4 address (or 0.0.0.0 if none)
 function getContainerIP() {
   const nets = os.networkInterfaces() || {};
+  const addrs = [];
   for (const name of Object.keys(nets)) {
-    for (const iface of nets[name] || []) {
+    const ifaces = nets[name] || [];
+    for (const iface of ifaces) {
       if (iface && iface.family === 'IPv4' && !iface.internal && iface.address) {
-        return iface.address;
+        addrs.push({ iface: name, addr: iface.address });
       }
     }
   }
-  return '0.0.0.0';
+  return addrs.length > 0 ? addrs[0].addr : '0.0.0.0';
 }
 
-// compute a formatted timestamp in UTC+3 in 12-hour format with AM/PM
+// compute timestamp UTC+3, 12-hour format
 function formatUTCPlus3() {
   const now = new Date();
   const utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
   const target = new Date(utc.getTime() + 2 * 3600 * 1000);
-
   const y = target.getUTCFullYear();
   const mo = String(target.getUTCMonth() + 1).padStart(2, '0');
   const d = String(target.getUTCDate()).padStart(2, '0');
   let hh = target.getUTCHours();
   const mm = String(target.getUTCMinutes()).padStart(2, '0');
   const ss = String(target.getUTCSeconds()).padStart(2, '0');
-
   const ampm = hh >= 12 ? 'PM' : 'AM';
   hh = hh % 12;
   if (hh === 0) hh = 12;
   const hhStr = String(hh).padStart(2, '0');
-
   return `${d}/${mo}/${y} ${hhStr}:${mm}:${ss} ${ampm}`;
 }
 
 function writeOutput() {
   const ip = getContainerIP();
   const content = `APP ${ip}\n`;
-
   try {
     fs.writeFileSync(OUTFILE, content, { encoding: 'utf8' });
     console.log('Wrote:', content.trim(), '->', OUTFILE);
@@ -83,7 +81,7 @@ html,body{
   position: relative;
 }
 
-/* 🔵 Colorful Kubernetes background + fade out in 20 sec */
+/* ⭐ Kubernetes background with 20-second smooth fade */
 body::before {
   content: "";
   position: absolute;
@@ -92,15 +90,15 @@ body::before {
   background-repeat: no-repeat;
   background-position: center;
   background-size: 60%;
-  opacity: 0.10;
+  opacity: 0.40;
   filter: blur(1px);
   z-index: 0;
-  animation: fadeBg 20s linear forwards;
+  animation: fadeBg 20s ease-out forwards;
 }
 
-/* 🌙 Background fade-out animation */
 @keyframes fadeBg {
-  0%   { opacity: 0.10; }
+  0%   { opacity: 0.40; }
+  70%  { opacity: 0.35; }
   100% { opacity: 0; }
 }
 
@@ -137,7 +135,7 @@ header{
   animation: fadeIn 1.4s ease;
 }
 
-/* 🟦 Kubernetes Favicon Icon */
+/* ⭐ Replace A1 box with Kubernetes icon */
 .logo{
   width:70px;
   height:70px;
@@ -152,6 +150,8 @@ header{
 }
 
 h1{ margin:0; font-size:28px; }
+
+p.lead{ margin:0; color:var(--muted); font-size:15px; }
 
 .info{
   display:flex;
@@ -183,7 +183,7 @@ h1{ margin:0; font-size:28px; }
 }
 
 .value{
-  font-family:ui-monospace,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
   font-size:22px;
   color:#d6ecff;
 }
@@ -224,9 +224,17 @@ button.primary:hover{
   box-shadow: 0 4px 16px rgba(96,165,250,0.4);
 }
 
+pre{
+  margin:0;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+/* Animations */
 @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
 @keyframes slideUp { from {opacity:0; transform:translateY(40px);} to {opacity:1; transform:translateY(0);} }
 @keyframes popIn { 0% {transform: scale(0);} 60% {transform: scale(1.1);} 100% {transform: scale(1);} }
+
 </style>
 </head>
 
@@ -254,8 +262,7 @@ button.primary:hover{
 
       <div class="field">
         <div class="label">Details</div>
-        <pre id="fileContents" style="margin:8px 0;font-size:20px;color:#dff1ff;background:transparent;border-radius:6px;padding:6px;">
-${safeFile || 'N/A'}</pre>
+        <pre id="fileContents">${safeFile || "N/A"}</pre>
 
         <div class="label">Last updated</div>
         <div class="value" id="ts">${timestamp}</div>
@@ -292,32 +299,37 @@ copyBtn.addEventListener('click', async () => {
 const server = http.createServer((req, res) => {
   if (req.url === '/' || req.url === '/output' || req.url === '/index.html') {
     let file = '';
-    try { file = fs.readFileSync(OUTFILE, 'utf8'); } catch {}
+    try { file = fs.readFileSync(OUTFILE, 'utf8'); } 
+    catch (_) {}
 
     const ip = getContainerIP();
-    const html = buildHtml({ ip, timestamp: formatUTCPlus3(), fileContents: file });
+    const html = buildHtml({
+      ip,
+      timestamp: formatUTCPlus3(),
+      fileContents: file
+    });
 
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(html);
-  }
 
-  else if (req.url === '/refresh') {
+  } else if (req.url === '/refresh') {
     const result = writeOutput();
-    const payload = { content: result.content, timestamp: formatUTCPlus3() };
+    const payload = {
+      content: result.content,
+      timestamp: formatUTCPlus3()
+    };
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(payload));
-  }
 
-  else if (req.url === '/raw') {
+  } else if (req.url === '/raw') {
     let file = '';
-    try { file = fs.readFileSync(OUTFILE, 'utf8'); }
-    catch { file = 'No output yet\n'; }
+    try { file = fs.readFileSync(OUTFILE, 'utf8'); } 
+    catch (_) { file = 'No output yet\n'; }
 
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end(file);
-  }
 
-  else {
+  } else {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Not found\n');
   }
