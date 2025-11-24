@@ -52,7 +52,7 @@ spec:
         }
 
         stage("Build Image & push to Dockerhub (Kaniko)") {
-            displayName("Build Image & push to Dockerhub (Kaniko)")
+            displayName 'Build Image & push to Dockerhub (Kaniko)'
             steps {
                 container('kaniko') {
                     sh '''
