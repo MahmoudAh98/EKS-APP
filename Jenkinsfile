@@ -43,7 +43,7 @@ spec:
     }
 
     stages {
-        stage("Checkout") {
+        stage("Source Code Checkout") {
             steps {
                 container('jnlp') {
                     checkout scm
@@ -51,7 +51,7 @@ spec:
             }
         }
 
-        stage("Build-Push Image (Kaniko)") {
+        stage("Build Image & push to Dockerhub (Kaniko)") {
             steps {
                 container('kaniko') {
                     sh '''
@@ -64,28 +64,32 @@ spec:
                 }
             }
         }
-        stage("Deploy Pod to EKS") {
-    steps {
-        container('kubectl') {
-            
-            sh '''
-                # Apply service
-                kubectl apply -f service.yaml
-
-                # Delete old pod (if exists)
-                kubectl delete pod eks-app -n app --ignore-not-found=true
-
-                # Replace image with latest before creating
-                sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" pod.yaml > pod-rendered.yaml
-
-                # Apply Pod
-                kubectl apply -f pod-rendered.yaml
-            '''
-
-
+        stage("Prepare Deployment Files") {
+            steps {
+                container('kubectl') {
+                    sh '''
+                        sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" pod.yaml > pod-rendered.yaml
+                    '''
+                }
+            }
         }
-    }
-}
+
+        stage("Deploy to EKS Cluster") {
+            steps {
+                container('kubectl') {
+                    sh '''
+                        # Apply Service
+                        kubectl apply -f service.yaml
+
+                        # Delete old pod if exists
+                        kubectl delete pod eks-app -n app --ignore-not-found=true
+
+                        # Apply the updated pod manifest
+                        kubectl apply -f pod-rendered.yaml
+                    '''
+                }
+            }
+        }
 
     }
 }
