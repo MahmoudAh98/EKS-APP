@@ -14,31 +14,38 @@ spec:
     volumeMounts:
     - name: kaniko-secret
       mountPath: /kaniko/.docker
-
   - name: kubectl
     image: bitnami/kubectl:latest
-    command:
-      - cat
+    command: ["cat"]
     tty: true
     securityContext:
       runAsUser: 1000
-
   - name: jnlp
     image: jenkins/inbound-agent:latest
-  
   volumes:
   - name: kaniko-secret
-    secret:
-      secretName: dockerconfig
-            """
+    emptyDir: {}
+"""
         }
     }
-
+    
     environment {
         DOCKERHUB_REPO = "mahmoudah98/eks"
+        // Store credentials in Jenkins credentials store
+        DOCKERHUB = credentials('dockerhub-credentials')
     }
-
+    
     stages {
+        stage("Setup Docker Credentials") {
+            steps {
+                container('kaniko') {
+                    sh '''
+                        echo "{\\"auths\\":{\\"https://index.docker.io/v1/\\":{\\"auth\\":\\"$(echo -n ${DOCKERHUB_USR}:${DOCKERHUB_PSW} | base64)\\"}}}" > /kaniko/.docker/config.json
+                    '''
+                }
+            }
+        }
+        
         stage("Source Code Checkout") {
             steps {
                 container('jnlp') {
@@ -46,32 +53,27 @@ spec:
                 }
             }
         }
-
+        
         stage("Build Image & push to Dockerhub (Kaniko)") {
             steps {
                 container('kaniko') {
                     sh '''
                         /kaniko/executor \
                           --dockerfile Dockerfile \
-                          --context `pwd` \
+                          --context $(pwd) \
                           --destination ${DOCKERHUB_REPO}:latest \
                           --cache=true
                     '''
                 }
             }
         }
-
+        
         stage("Deploy to EKS Cluster") {
             steps {
                 container('kubectl') {
                     sh '''
-                        # Apply Service
                         kubectl apply -f service.yaml
-
-                        # Delete old pod if exists
                         kubectl delete pod eks-app -n app --ignore-not-found=true
-
-                        # Apply the updated pod manifest directly (no need for sed anymore)
                         kubectl apply -f pod.yaml
                     '''
                 }
