@@ -15,7 +15,6 @@ spec:
     - name: kaniko-secret
       mountPath: /kaniko/.docker
 
-      
   - name: kubectl
     image: bitnami/kubectl:latest
     command:
@@ -24,11 +23,8 @@ spec:
     securityContext:
       runAsUser: 1000
 
-
-
   - name: jnlp
     image: jenkins/inbound-agent:latest
-    # DO NOT override args here!
   
   volumes:
   - name: kaniko-secret
@@ -64,15 +60,6 @@ spec:
                 }
             }
         }
-        stage("Prepare Deployment Files") {
-            steps {
-                container('kubectl') {
-                    sh '''
-                        sed "s|image:.*|image: ${DOCKERHUB_REPO}:latest|" pod.yaml > pod-rendered.yaml
-                    '''
-                }
-            }
-        }
 
         stage("Deploy to EKS Cluster") {
             steps {
@@ -84,12 +71,11 @@ spec:
                         # Delete old pod if exists
                         kubectl delete pod eks-app -n app --ignore-not-found=true
 
-                        # Apply the updated pod manifest
-                        kubectl apply -f pod-rendered.yaml
+                        # Apply the updated pod manifest directly (no need for sed anymore)
+                        kubectl apply -f pod.yaml
                     '''
                 }
             }
         }
-
     }
 }
