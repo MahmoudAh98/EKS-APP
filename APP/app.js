@@ -45,7 +45,7 @@ function formatUTCPlus3() {
 
 function writeOutput() {
   const ip = getContainerIP();
-  const content = `APP ${ip}\n`;
+  const content = `APP55 ${ip}\n`;
 
   try {
     fs.writeFileSync(OUTFILE, content, { encoding: 'utf8' });
