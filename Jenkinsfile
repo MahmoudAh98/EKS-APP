@@ -36,6 +36,15 @@ spec:
     }
     
     stages {
+
+        stage("Source Code Checkout") {
+            steps {
+                container('jnlp') {
+                    checkout scm
+                }
+            }
+        }
+        
         stage("Setup Docker Credentials") {
             steps {
                 container('kaniko') {
@@ -45,15 +54,6 @@ spec:
                 }
             }
         }
-        
-        stage("Source Code Checkout") {
-            steps {
-                container('jnlp') {
-                    checkout scm
-                }
-            }
-        }
-        
         stage("Build Image & push to Dockerhub (Kaniko)") {
             steps {
                 container('kaniko') {
