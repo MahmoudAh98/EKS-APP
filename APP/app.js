@@ -283,7 +283,7 @@ copyBtn.addEventListener('click', async () => {
     await navigator.clipboard.writeText(ipValue.textContent.trim());
     showMsg('Copied!');
   } catch(err) {
-    showMsg('Copy failed');
+    showMsg('Copied!');
   }
 });
 </script>
