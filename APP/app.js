@@ -239,7 +239,7 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;}
   <div class="card" role="main">
     <header>
       <div class="logo"></div>
-      <div><h1>APP1 - Pod Info</h1></div>
+      <div><h1>APP - Pod Info</h1></div>
     </header>
 
     <div class="info">
